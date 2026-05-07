@@ -1,0 +1,48 @@
+name: Poll ATS Jobs
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run poll script
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: python poll.py
+
+      - name: Commit updated jobs database
+        run: |
+          if [ ! -f jobs.db ]; then
+            echo "jobs.db was not created; nothing to commit."
+            exit 0
+          fi
+          git add jobs.db
+
+          if git diff --cached --quiet -- jobs.db; then
+            echo "No changes in jobs.db"
+            exit 0
+          fi
+
+          git commit -m "chore: update jobs database state" || exit 0
+          git push
