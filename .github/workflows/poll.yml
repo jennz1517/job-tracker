@@ -37,12 +37,5 @@ jobs:
             echo "jobs.db was not created; nothing to commit."
             exit 0
           fi
-          git add jobs.db
-
-          if git diff --cached --quiet -- jobs.db; then
-            echo "No changes in jobs.db"
-            exit 0
-          fi
-
-          git commit -m "chore: update jobs database state" || exit 0
-          git push
+          git add -f jobs.db
+          git diff --quiet --cached || (git commit -m "update jobs.db" && git push)
